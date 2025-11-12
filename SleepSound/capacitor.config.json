@@ -1,0 +1,14 @@
+{
+  "appId": "com.david.sleepsound",
+  "appName": "SleepSound",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  },
+  "server": {
+    "cleartext": true
+  }
+}
