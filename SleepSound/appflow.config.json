@@ -5,15 +5,8 @@
       "root": ".",
       "iosPath": "ios/App"
     }
-  },
-  "hooks": {
-    "before_build": {
-      "commands": [
-        "npm install",
-        "npx cap sync ios"
-      ]
-    }
   }
 }
+
 
 
