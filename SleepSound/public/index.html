@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+    <title>Sleep Sound</title>
+    <style>
+        :root{
+          --bg:#000;--text:#e6e6e6;--muted:#a9b0b6;--accent:#00b060;--accent-soft:rgba(0,255,120,.35);
+        }
+        *{box-sizing:border-box}
+        html,body{margin:0;height:100%;background:#000;color:var(--text);font:300 16px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+        .wrap{min-height:100dvh;width:100%;max-width:clamp(320px,95vw,480px);margin:0 auto;padding:clamp(12px,3vw,18px);display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center}
+        .card{position:relative;width:100%;border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,1));box-shadow:0 4px 24px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);padding:16px;overflow:hidden}
+        .header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+        .brand{font-weight:600;letter-spacing:.3px}
+        .btn-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+        .pill{background:rgba(20,20,22,.6);border:1px solid rgba(255,255,255,.08);color:#ddd;padding:10px 14px;border-radius:999px;cursor:pointer;backdrop-filter:blur(8px);transition:background .25s}
+        .pill:hover{background:rgba(50,255,150,.12)}
+        .btn-ios{border:none}
+
+        /* Play + onde pulsée (image de fond + icône texte superposée) */
+        .btn-round{width:72px;height:72px;border-radius:50%;background:none; /* remplace l'ancien fond */
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 18px rgba(0,0,0,.7);
+          display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;transition:transform .2s;overflow:hidden}
+        .btn-round:active{transform:scale(.98)}
+        .btn-round .play-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;
+          filter:drop-shadow(0 0 6px rgba(0,255,120,0.35));}
+        #playIcon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+          color:#fff;font-size:1.1rem;text-shadow:0 0 10px rgba(255,255,255,.25);transition:font-size .25s}
+        #playBtn.active #playIcon{font-size:0.8rem}
+        #playBtn{position:relative;overflow:visible}
+        #playBtn::after{content:"";position:absolute;inset:-15px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,120,.4) 0%,rgba(0,255,120,0) 70%);opacity:0;transform:scale(.9);transition:all .3s ease;z-index:1}
+        #playBtn.active::after{opacity:1;animation:pulseHalo 2.5s infinite ease-in-out}
+        @keyframes pulseHalo{0%{transform:scale(.9);opacity:.4}50%{transform:scale(1.3);opacity:.15}100%{transform:scale(.9);opacity:.4}}
+
+        .info{font-size:.65rem;color:var(--muted);text-align:center;margin-top:2px}
+
+        /* Timer */
+        .row{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+        input[type=range]{width:70%;-webkit-appearance:none;background:transparent}
+        input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1a1c1f;border-radius:4px}
+        input[type=range]::-moz-range-track{height:4px;background:#1a1c1f;border-radius:4px}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent-soft);margin-top:-6px}
+        #remaining{display:inline-block;min-width:80px;text-align:center;background:#1a1c1f;color:#8fc8ff;border-radius:8px;padding:6px 10px;font-family:monospace;font-size:14px}
+
+        /* Capsules (loops) */
+        .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
+        .tile{background:rgba(10,10,12,.55);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:9px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+        .tile h3{margin:0;font-size:.95rem;font-weight:500}
+        .switch{position:relative;width:78px;height:34px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,#15171b,#0d0f12);display:flex;align-items:center;justify-content:space-between;padding:0 8px;color:#9aa3ab;cursor:pointer}
+        .switch .label{font-size:.7rem;opacity:.9}
+        .switch .knob{position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#0f1114;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 8px rgba(0,0,0,.6);transition:left .22s}
+        .switch .glow{position:absolute;inset:-4px;border-radius:50%;box-shadow:0 0 10px rgba(255,70,70,.45);opacity:.7;pointer-events:none}
+        .switch.active{background:linear-gradient(180deg,#101915,#0b120e)}
+        .switch.active .knob{left:47px}
+        .switch.active .glow{box-shadow:0 0 12px rgba(20,255,150,.6)}
+        .switch .label.off{color:#ff6666}
+        .switch .label.on{color:#00de8a}
+        .switch {
+  transform: scale(0.9);
+  transform-origin: center;
+}
+
+        .footer{text-align:center;font-size:10px;color:var(--muted);opacity:.98;margin-top:10px;padding-bottom:14px;line-height:1.4}
+
+        /* ===== Favoris : bloc transparent (pas de fond ni bordure) ===== */
+        .favbar{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+        .favbar .pill{background:rgba(255,255,255,.06);border:none;color:#eee;font-size:13px;backdrop-filter:blur(10px);transition:background .25s,transform .15s}
+        .favbar .pill:hover{background:rgba(0,255,120,.15);transform:scale(1.04)}
+        #saveFav.saved{position:relative;background:linear-gradient(90deg,#f5d46f,#ffcc33,#f5d46f);color:#222;box-shadow:0 0 12px rgba(255,220,100,.5);animation:starFlash 1.2s ease-out forwards}
+        @keyframes starFlash{0%{transform:scale(1);opacity:1}30%{transform:scale(1.15);opacity:1}60%{transform:scale(1.05);box-shadow:0 0 16px rgba(255,220,100,.7)}100%{transform:scale(1);opacity:1;box-shadow:none}}
+
+        /* ===== Overlays verre gris très foncé ===== */
+        .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.2);backdrop-filter:blur(18px);z-index:90}
+        .sheet{background:rgba(255,255,255,.06);border:none;border-radius:18px;padding:18px;min-width:280px;color:#e0e3e7;backdrop-filter:blur(14px);box-shadow:0 4px 20px rgba(0,0,0,.5);transform:translateY(10px);opacity:0;transition:opacity .25s,transform .25s}
+        .overlay.show .sheet{opacity:1;transform:translateY(0)}
+
+        /* Menu langues (inchangé, profite du style sheet/overlay) */
+        .lang{display:flex;gap:8px;align-items:center}
+        .lang .pill{padding:8px 12px}
+        .langList{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+        .langItem{padding:10px;border-radius:12px;background:rgba(255,255,255,.08);border:none;cursor:pointer;text-align:center;color:#f1f1f1;backdrop-filter:blur(10px);transition:background .3s,transform .2s}
+        .langItem:hover{background:rgba(0,255,120,.15);transform:scale(1.05)}
+
+        /* Overlay Sauvegarder */
+        .saveRow{display:flex;gap:8px;margin-top:12px}
+        .inputGlass{flex:1;background:rgba(255,255,255,.08);border:none;color:#fff;border-radius:10px;padding:10px 12px;outline:none}
+
+        /* Overlay Favoris : liste cartes cliquables */
+        .favList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+        .favItem{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);border:none;color:#f1f1f1;display:flex;align-items:center;justify-content:space-between;cursor:pointer;backdrop-filter:blur(10px);transition:background .25s,transform .15s}
+        .favItem:hover{background:rgba(0,255,120,.14);transform:translateY(-1px)}
+        .favEmpty{opacity:.8;text-align:center}
+
+        /* Notification (verre discret) */
+        .notify{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(40px);background:rgba(255,255,255,.06);color:#eee;border:none;border-radius:12px;padding:10px 18px;font-size:14px;opacity:0;pointer-events:none;backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(0,0,0,.5);transition:all .5s ease;z-index:9999}
+        .notify.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="card">
+        <div class="header">
+            <div class="brand" id="brand">Sleep Sound</div>
+            <div class="lang">
+                <button id="openLang" class="pill">🌐 Langue</button>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button id="playBtn" class="btn-ios btn-round">
+                <img class="play-bg" src="playbutton.png" alt="Play Button"/>
+                <span id="playIcon">▶</span>
+            </button>
+            <button id="mixBtn" class="pill"><span id="mixLabel">Mix Aléatoire</span></button>
+        </div>
+
+        <!-- Barre d’actions Favoris transparente -->
+        <div class="favbar">
+            <button id="saveFav" class="pill">⭐ Sauvegarder ce mix</button>
+            <button id="openFav" class="pill">🎧 Favoris</button>
+            <button id="openFavAlso" class="pill">▶ Charger</button>
+        </div>
+
+        <p class="info" id="introText">Touchez une capsule pour activer un son. Utilisez Mix Aléatoire pour un paysage sonore instantané.</p>
+
+        <!-- Timer -->
+        <div class="row">
+            <button id="startTimer" class="pill">Démarrer minuterie</button>
+            <input id="timerRange" type="range" min="1" max="120" value="20"/>
+            <button id="stopTimer" class="pill">Stop</button>
+        </div>
+        <div class="row">
+            <span id="timerLabel">20 min</span>
+            <span id="remaining"></span>
+        </div>
+
+        <!-- Grid des loops -->
+        <div id="tracks" class="grid"></div>
+
+        <div class="footer" id="foot">
+            Sleep Sound. Touchez une capsule pour activer. “Mix Aléatoire” crée un paysage sonore instantané. — Created by David Teboul @2025
+        </div>
+    </div>
+</div>
+
+<!-- Overlay langues -->
+<div id="overlayLang" class="overlay">
+    <div class="sheet">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <div style="font-weight:600">Langue</div>
+            <button id="closeLang" class="pill">Fermer</button>
+        </div>
+        <div class="langList" style="margin-top:10px">
+            <div class="langItem" data-lang="fr">Français</div>
+            <div class="langItem" data-lang="en">English</div>
+            <div class="langItem" data-lang="es">Español</div>
+            <div class="langItem" data-lang="de">Deutsch</div>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay Sauvegarder (verre gris foncé) -->
+<div id="overlaySave" class="overlay">
+    <div class="sheet">
+        <div style="font-weight:600">Nom du mix favori</div>
+        <div class="saveRow">
+            <input id="favName" class="inputGlass" type="text" placeholder="Ex. Pluie + Vent + Oiseaux"/>
+            <button id="saveOk" class="pill">Enregistrer</button>
+            <button id="saveCancel" class="pill">Annuler</button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay Favoris (verre gris foncé) -->
+<div id="overlayFav" class="overlay">
+    <div class="sheet">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <div style="font-weight:600">Favoris</div>
+            <button id="closeFav" class="pill">Fermer</button>
+        </div>
+        <div id="favContainer" class="favList"></div>
+    </div>
+</div>
+
+<!-- Notification -->
+<div id="notify" class="notify"></div>
+
+<script>
+    /* ===================== AUDIO — Web Audio API ===================== */
+    const base = "sounds/";               // même dossier que tes loops + click.wav
+    const files = [...Array(20)].map((_, i) => `loop${i + 1}`);
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const MASTER_FIXED = 0.8;
+    let playing = false;
+    const tracks = [];
+
+    async function loadBuffer(url){
+      const res = await fetch(url);
+      const buf = await res.arrayBuffer();
+      return await audioCtx.decodeAudioData(buf);
+    }
+
+    function playLoop(buffer){
+      const src = audioCtx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      const gain = audioCtx.createGain();
+      gain.gain.value = MASTER_FIXED;
+      src.connect(gain).connect(audioCtx.destination);
+      src.start(0);
+      return { src, gain };
+    }
+
+    const tracksEl = document.getElementById('tracks');
+    files.forEach(name=>{
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      const title = document.createElement('h3');
+      title.textContent = name;
+      tile.appendChild(title);
+
+      const sw = document.createElement('button');
+      sw.className = 'switch';
+      sw.innerHTML = `
+        <span class="label off">OFF</span>
+        <span class="knob"><span class="glow"></span></span>
+        <span class="label on">ON</span>`;
+      tile.appendChild(sw);
+      tracksEl.appendChild(tile);
+
+      let on=false, buffer=null, current=null;
+
+      loadBuffer(base + name + '.wav').then(b=>buffer=b).catch(()=>loadBuffer(base + name + '.mp3').then(b=>buffer=b).catch(()=>{}));
+
+      sw.addEventListener('click', ()=>{
+        on=!on; sw.classList.toggle('active', on);
+        if(playing){
+          if(on && buffer){ current = playLoop(buffer); }
+          else if(current){ try{ current.src.stop(); }catch{}; current=null; }
+        }
+      });
+
+      tile.addEventListener('click', e=>{ if(!e.target.closest('.switch')) sw.click(); });
+
+      tracks.push({
+        name,
+        get on(){return on;}, set on(v){on=v; sw.classList.toggle('active', on);},
+        stop(){ if(current){ try{ current.src.stop(); }catch{}; current=null; } },
+        resume(){ if(on && buffer){ current = playLoop(buffer); } }
+      });
+    });
+
+    /* PLAY / PAUSE */
+    const playBtn = document.getElementById('playBtn');
+    document.getElementById('playBtn').addEventListener('click', async ()=>{
+      playing = !playing;
+      document.getElementById('playIcon').textContent = playing ? '❚❚' : '▶';
+      playBtn.classList.toggle('active', playing);
+      playBtn.classList.toggle('paused', !playing);
+      if(playing){ await audioCtx.resume(); tracks.forEach(t=>t.resume()); }
+      else{ tracks.forEach(t=>t.stop()); }
+    });
+
+    /* MIX ALÉATOIRE */
+    document.getElementById('mixBtn').addEventListener('click', ()=>{
+      tracks.forEach(t=>{ t.stop(); t.on=false; });
+      const count = Math.floor(Math.random()*5)+3;
+      const idxs = [...Array(tracks.length).keys()].sort(()=>Math.random()-.5).slice(0,count);
+      idxs.forEach(i=>tracks[i].on=true);
+      if(playing){ idxs.forEach(i=>tracks[i].resume()); }
+    });
+
+    /* TIMER */
+    let timerId=null,endAt=0;
+    const timerRange=document.getElementById('timerRange');
+    const timerLabel=document.getElementById('timerLabel');
+    const rem=document.getElementById('remaining');
+    timerRange.addEventListener('input',()=>timerLabel.textContent=`${timerRange.value} min`);
+    document.getElementById('startTimer').addEventListener('click',()=>{
+      const ms=+timerRange.value*60000;
+      clearInterval(timerId); endAt=Date.now()+ms;
+      timerId=setInterval(()=>{
+        const left=Math.max(0,endAt-Date.now());
+        const m=String(Math.floor(left/60000)).padStart(2,'0');
+        const s=String(Math.floor((left%60000)/1000)).padStart(2,'0');
+        rem.textContent=`${m}:${s}`;
+        if(left<=0){ clearInterval(timerId); rem.textContent='00:00';
+          tracks.forEach(t=>t.stop()); playing=false;
+          document.getElementById('playIcon').textContent='▶'; playBtn.classList.remove('active'); playBtn.classList.add('paused');
+        }
+      },250);
+    });
+    document.getElementById('stopTimer').addEventListener('click',()=>{ clearInterval(timerId); rem.textContent=''; });
+
+    /* ===== I18N ===== */
+    const overlayLang=document.getElementById('overlayLang');
+    document.getElementById('openLang').addEventListener('click',()=>{overlayLang.style.display='flex';requestAnimationFrame(()=>overlayLang.classList.add('show'));});
+    document.getElementById('closeLang').addEventListener('click',()=>{overlayLang.classList.remove('show');setTimeout(()=>overlayLang.style.display='none',200);});
+    overlayLang.addEventListener('click',e=>{ if(e.target===overlayLang){overlayLang.classList.remove('show');setTimeout(()=>overlayLang.style.display='none',200);} });
+    const i18n={
+      fr:{brand:"Sleep Sound",intro:"Touchez une capsule pour activer un son. Utilisez Mix Aléatoire pour un paysage sonore instantané.",start:"Démarrer minuterie",stop:"Stop",foot:"Web — 20 loops (~60s). Touchez une capsule pour activer. “Mix Aléatoire” crée un paysage sonore instantané. — Created by David Teboul @2025",mix:"Mix Aléatoire",auto:"Arrêt automatique",save:"Sauvegarder ce mix",favs:"Favoris",load:"Charger",name:"Nom du mix favori",ok:"Enregistrer",cancel:"Annuler",noFav:"Aucun favori pour le moment"},
+      en:{brand:"Sleep Sound",intro:"Tap a capsule to enable a sound. Use Random Mix for an instant soundscape.",start:"Start timer",stop:"Stop",foot:"Web — 20 loops (~60s). Tap a capsule to enable. “Random Mix” creates an instant soundscape. — Created by David Teboul @2025",mix:"Random Mix",auto:"Auto stop",save:"Save this mix",favs:"Favorites",load:"Load",name:"Favorite mix name",ok:"Save",cancel:"Cancel",noFav:"No favorites yet"},
+      es:{brand:"Sleep Sound",intro:"Toca una cápsula para activar un sonido. Usa Mezcla Aleatoria para un paisaje instantáneo.",start:"Iniciar temporizador",stop:"Detener",foot:"Web — 20 loops (~60s). Toca una cápsula para activar. “Mezcla Aleatoria” crea un paisaje sonoro al instante. — Created by David Teboul @2025",mix:"Mezcla Aleatoria",auto:"Parada automática",save:"Guardar esta mezcla",favs:"Favoritos",load:"Cargar",name:"Nombre del mix favorito",ok:"Guardar",cancel:"Cancelar",noFav:"Aún no hay favoritos"},
+      de:{brand:"Sleep Sound",intro:"Tippe auf eine Kapsel, um einen Klang zu aktivieren. Nutze Zufallsmix für eine sofortige Klanglandschaft.",start:"Timer starten",stop:"Stopp",foot:"Web — 20 loops (~60s). Tippe auf eine Kapsel, um zu aktivieren. „Zufallsmix“ erstellt eine sofortige Klanglandschaft. — Created by David Teboul @2025",mix:"Zufallsmix",auto:"Automatisches Stoppen",save:"Diesen Mix speichern",favs:"Favoriten",load:"Laden",name:"Name des Favoriten",ok:"Speichern",cancel:"Abbrechen",noFav:"Noch keine Favoriten"}
+    };
+    function setLang(code){
+      const t=i18n[code]||i18n.fr;
+      document.getElementById('brand').textContent=t.brand;
+      document.getElementById('introText').textContent=t.intro;
+      document.getElementById('startTimer').textContent=t.start;
+      document.getElementById('stopTimer').textContent=t.stop;
+      document.getElementById('mixLabel').textContent=t.mix;
+      document.getElementById('saveFav').textContent='⭐ '+t.save;
+      document.getElementById('openFav').textContent='🎧 '+t.favs;
+      document.getElementById('openFavAlso').textContent='▶ '+t.load;
+      document.getElementById('foot').textContent=t.foot;
+      document.getElementById('saveOk').textContent=t.ok;
+      document.getElementById('saveCancel').textContent=t.cancel;
+      document.querySelector('#overlaySave .sheet div[style*="font-weight"]').textContent=t.name;
+      document.getElementById('favName').placeholder="Ex. Pluie + Vent + Oiseaux";
+      document.getElementById('favContainer').dataset.empty=t.noFav;
+    }
+    overlayLang.querySelectorAll('.langItem[data-lang]').forEach(el=>el.addEventListener('click',()=>{setLang(el.dataset.lang);overlayLang.classList.remove('show');setTimeout(()=>overlayLang.style.display='none',200);} ));
+    setLang('fr');
+
+    /* === Notification légère === */
+    function showNotify(msg){
+      const n=document.getElementById('notify');
+      n.textContent=msg; n.classList.add('show');
+      clearTimeout(n._timer); n._timer=setTimeout(()=>n.classList.remove('show'),2000);
+    }
+
+    /* === Petit son de confirmation (click.wav dans sounds/) === */
+    async function playClick(){
+      try{
+        const res=await fetch(base+'click.wav');
+        const buf=await res.arrayBuffer();
+        const audioBuf=await audioCtx.decodeAudioData(buf);
+        const src=await audioCtx.createBufferSource();
+        src.buffer=audioBuf; const g=audioCtx.createGain(); g.gain.value=.4;
+        src.connect(g).connect(audioCtx.destination); src.start(0);
+      }catch(e){}
+    }
+
+    /* ===== Favoris (overlay verre + stockage) ===== */
+    const saveBtn=document.getElementById('saveFav');
+    const openFav=document.getElementById('openFav');
+    const openFavAlso=document.getElementById('openFavAlso');
+    const overlaySave=document.getElementById('overlaySave');
+    const overlayFav=document.getElementById('overlayFav');
+    const favContainer=document.getElementById('favContainer');
+    const favNameInput=document.getElementById('favName');
+    const saveOk=document.getElementById('saveOk');
+    const saveCancel=document.getElementById('saveCancel');
+    const closeFav=document.getElementById('closeFav');
+
+    let favorites=JSON.parse(localStorage.getItem('favorites')||'[]');
+
+    function renderFavList(){
+      favContainer.innerHTML='';
+      if(!favorites.length){
+        const em=document.createElement('div');
+        em.className='favEmpty';
+        em.textContent=favContainer.dataset.empty||'Aucun favori pour le moment';
+        favContainer.appendChild(em);
+        return;
+      }
+      favorites.slice(0,3).forEach((fav,i)=>{
+        const item=document.createElement('div');
+        item.className='favItem';
+        item.innerHTML=`<span>⭐ ${fav.name}</span><button class="pill">▶</button>`;
+        item.querySelector('button').addEventListener('click',()=>{
+          tracks.forEach(t=>{t.stop(); t.on=false;});
+          fav.active.forEach(n=>{
+            const tr=tracks.find(t=>t.name===n);
+            if(tr){ tr.on=true; if(playing) tr.resume(); }
+          });
+          showNotify(`▶ Mix "${fav.name}" chargé`);
+          overlayFav.classList.remove('show'); setTimeout(()=>overlayFav.style.display='none',200);
+        });
+        favContainer.appendChild(item);
+      });
+    }
+
+    function openOverlay(el){ el.style.display='flex'; requestAnimationFrame(()=>el.classList.add('show')); }
+    function closeOverlay(el){ el.classList.remove('show'); setTimeout(()=>el.style.display='none',200); }
+
+    saveBtn.addEventListener('click',()=>{ favNameInput.value=''; openOverlay(overlaySave); });
+    saveCancel.addEventListener('click',()=>closeOverlay(overlaySave));
+    overlaySave.addEventListener('click',e=>{ if(e.target===overlaySave) closeOverlay(overlaySave); });
+    saveOk.addEventListener('click',()=>{
+      const name=(favNameInput.value||'').trim()||("Mix "+(favorites.length+1));
+      const active=tracks.filter(t=>t.on).map(t=>t.name);
+      if(!active.length){ showNotify("Aucun son activé à sauvegarder"); return; }
+      favorites.unshift({name,active}); if(favorites.length>3) favorites.pop();
+      localStorage.setItem('favorites',JSON.stringify(favorites));
+      saveBtn.classList.add('saved'); setTimeout(()=>saveBtn.classList.remove('saved'),1000);
+      showNotify(`⭐ Mix "${name}" sauvegardé`); playClick();
+      closeOverlay(overlaySave);
+    });
+
+    function openFavOverlay(){ renderFavList(); openOverlay(overlayFav); }
+    openFav.addEventListener('click',openFavOverlay);
+    openFavAlso.addEventListener('click',openFavOverlay);
+    closeFav.addEventListener('click',()=>closeOverlay(overlayFav));
+    overlayFav.addEventListener('click',e=>{ if(e.target===overlayFav) closeOverlay(overlayFav); });
+</script>
+</body>
+</html>
