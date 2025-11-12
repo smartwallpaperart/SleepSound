@@ -1,7 +1,7 @@
 {
   "apps": {
     "_default": {
-      "appId": "09d3f784",
+      "appId": "c51f4190",
       "root": ".",
       "iosPath": "ios/App"
     }
@@ -15,4 +15,5 @@
     }
   }
 }
+
 
